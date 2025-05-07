@@ -65,6 +65,50 @@ async function sincronizarPlanilha() {
     }
 }
 
+async function adiarEscalaPlanilha() {
+    try {
+        const sheets = getGoogleSheetsClient();
+
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: configs.spreadsheet.SPREADSHEET_ID,
+            range: configs.spreadsheet.RANGE
+        });
+
+        if (!response.data.values || response.data.values.length === 0) {
+            console.error('❌ Nenhum dado encontrado na planilha.');
+            return false;
+        }
+
+        const novaEscala = response.data.values.map(([data, nome]) => {
+            if (!data || !nome) return [data, nome]; 
+
+            const [dia, mes] = data.split('-').map(Number);
+            const dataAtual = new Date(new Date().getFullYear(), mes - 1, dia);
+
+            dataAtual.setDate(dataAtual.getDate() + 7);
+
+            const novaData = dataAtual.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }).replace('/', '-');
+
+            return [novaData, nome];
+        });
+
+        await sheets.spreadsheets.values.update({
+            spreadsheetId: configs.spreadsheet.SPREADSHEET_ID,
+            range: configs.spreadsheet.RANGE,
+            valueInputOption: 'RAW',
+            requestBody: {
+                values: novaEscala
+            }
+        });
+
+        console.log('✅ Escala adiada em uma semana na planilha.');
+        return true;
+    } catch (err) {
+        console.error('❌ Erro ao adiar a escala na planilha:', err);
+        return false;
+    }
+}
+
 
 function obterSaudacao() {
     const horaAtual = new Date().getHours();
@@ -83,6 +127,7 @@ function formatarEscala() {
     const footer = "===========================";
     return `${saudacao}${header}${body}\n${footer}`;
 }
+
 
 client.once('ready', () => {
     console.log(`✅ Aunibot ativo às ${new Date().toLocaleTimeString()}`);
@@ -113,6 +158,18 @@ client.on('message', async (msg) => {
             await msg.reply(success ? '✅ Escala atualizada!' : '❌ Falha na atualização.');
             return;
         }
+
+        if (msg.body === '!adiar') {
+            if (!configs.admins.includes(msg.from)) {
+                await msg.reply('❌ Você não tem permissão para executar este comando.');
+                return;
+            }
+            const success = await adiarEscalaPlanilha();
+            await msg.reply(success ? '✅ Escala adiada em uma semana!' : '❌ Falha ao adiar a escala.');
+            return;
+        }
+
+
     } catch (err) {
         console.error('❌ Erro ao processar mensagem:', err);
         await msg.reply('❌ Ocorreu um erro ao processar sua solicitação.');
@@ -126,6 +183,4 @@ client.on('disconnected', (reason) => {
 
 
 client.initialize();
-
-console.log('📂 Diretório de autenticação:', path.resolve('.wwebjs_auth'));
 
