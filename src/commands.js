@@ -1,4 +1,4 @@
-const { sincronizarPlanilha, adiarEscalaPlanilha, loadLocalScale } = require('./scaleService');
+const { sincronizarPlanilha, adiarEscalaPlanilha, loadLocalScale, checkoutEscala } = require('./scaleService');
 const { formatarEscala, isAdmin } = require('./utils');
 
 /**
@@ -36,6 +36,18 @@ async function handleMessage(msg) {
         await adminOnly(async (msg) => {
             const novaEscala = await adiarEscalaPlanilha();
             await msg.reply(novaEscala ? `✅ Escala adiada!\n\n${formatarEscala(novaEscala.escala)}` : '❌ Erro ao adiar a escala.');
+        })(msg);
+    }
+
+    else if (content === '!checkout') {
+        await adminOnly(async (msg) => {
+            const success = await checkoutEscala(); 
+            if (success) {
+                const updated = await sincronizarPlanilha(); 
+                await msg.reply(updated ? '✅ Escala atualizada e sincronizada com sucesso!' : '✅ Escala atualizada, mas houve um erro ao sincronizar.');
+            } else {
+                await msg.reply('❌ Erro ao atualizar a escala.');
+            }
         })(msg);
     }
 }

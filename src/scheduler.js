@@ -1,7 +1,7 @@
 const schedule = require('node-schedule');
 const { getCurrentDayAndTime } = require('./utils');
 const { loadLocalScale } = require('./scaleService');
-const bolsistasIds = require('../config/bolsistas_ids.json'); // Importa os IDs dos bolsistas
+const bolsistasIds = require('../config/bolsistas_ids.json');
 
 /**
  * Configura os agendamentos do bot.
@@ -10,23 +10,28 @@ const bolsistasIds = require('../config/bolsistas_ids.json'); // Importa os IDs 
 function setupSchedules(client) {
     console.log('⏰ Configurando agendamentos...');
 
-    // Agendar mensagem toda quinta-feira às 9h
-    schedule.scheduleJob('0 9 * * 4', async () => {
+    schedule.scheduleJob('0 15 * * 4', async () => {
         const { day, time } = getCurrentDayAndTime();
         console.log(`⏰ Executando tarefa agendada: ${day} às ${time}`);
 
         const escala = loadLocalScale();
-        const proximoSabado = Object.keys(escala.escala)[0]; // Obtém a data do próximo sábado
-        const bolsista = escala.escala[proximoSabado]; // Nome do bolsista responsável
+        const proximoSabado = Object.keys(escala.escala)[0];
+        const bolsista = escala.escala[proximoSabado];
 
         if (bolsista) {
-            const id = bolsistasIds[bolsista]; // Obtém o ID do bolsista pelo nome
-            if (id) {
-                const mensagem = `📢 Atenção! ${bolsista}, você está convocado para a escala do próximo sábado (${proximoSabado}).`;
-                await client.sendMessage(id, mensagem); // Envia a mensagem diretamente para o bolsista
-                console.log(`✅ Mensagem enviada para ${id}: ${mensagem}`);
+            const id = bolsistasIds[bolsista];
+            const grupoId = bolsistasIds.grupoId;
+
+            if (id && grupoId) {
+                const mensagem = `📢 Atenção! @${id.split('@')[0]}, você está convocado para a escala do próximo sábado (${proximoSabado}).`;
+
+                await client.sendMessage(grupoId, mensagem, {
+                    mentions: [id]
+                });
+
+                console.log(`✅ Mensagem enviada para o grupo mencionando ${id}: ${mensagem}`);
             } else {
-                console.log(`⚠️ ID não encontrado para o bolsista ${bolsista}.`);
+                console.log(`⚠️ ID não encontrado para o bolsista ${bolsista} ou grupo.`);
             }
         } else {
             console.log('⚠️ Nenhum bolsista encontrado para o próximo sábado.');

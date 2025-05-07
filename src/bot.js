@@ -1,13 +1,20 @@
 const client = require('./client');
 const qrcode = require('qrcode-terminal');
 const handleMessage = require('./commands');
-const setupSchedules = require('./scheduler'); // Importa o arquivo de agendamentos
+const setupSchedules = require('./scheduler');
 
-client.once('ready', () => {
+client.once('ready', async () => {
     console.log(`✅ Aunibot pronto às ${new Date().toLocaleTimeString()}`);
 
-    // Configurar os agendamentos
-    setupSchedules(client);
+    //setupSchedules(client);
+
+    const chats = await client.getChats();
+    const grupos = chats.filter(chat => chat.isGroup);
+
+    console.log('📋 Grupos disponíveis:');
+    grupos.forEach(grupo => {
+        console.log(`- Nome: ${grupo.name}, ID: ${grupo.id._serialized}`);
+    });
 });
 
 client.on('qr', (qr) => {
@@ -16,8 +23,8 @@ client.on('qr', (qr) => {
 
 client.on('message', async (msg) => {
     try {
-        const senderId = msg.author || msg.from; 
-        const senderName = msg.notifyName || (msg.sender && msg.sender.pushname) || "Desconhecido"; 
+        const senderId = msg.author || msg.from;
+        const senderName = msg.notifyName || (msg.sender && msg.sender.pushname) || "Desconhecido";
 
         console.log(`📩 Mensagem recebida de: ${senderName} (ID: ${senderId})`);
 
