@@ -128,7 +128,7 @@ async function checkoutEscala() {
             console.log('✅ Escala reorganizada com sucesso!');
 
             const sheets = getGoogleSheetsClient();
-            const ultimaLinha = dados.length + 1; /
+            const ultimaLinha = dados.length + 1;
             const rangeParaLimpar = `A${ultimaLinha}:B${ultimaLinha}`;
             await sheets.spreadsheets.values.clear({
                 spreadsheetId: spreadsheet.SPREADSHEET_ID,
