@@ -1,9 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 const getGoogleSheetsClient = require('./googleSheets');
-const spreadsheet = require('../config/spreadsheet.json');
 
-const BOLSISTAS_FILE = path.join(__dirname, '../config/bolsistas.json');
+const BOLSISTAS_FILE = path.resolve(process.env.BOLSISTAS_FILE); // Caminho do arquivo de bolsistas
+const SPREADSHEET_ID = process.env.SPREADSHEET_ID; // ID da planilha
+const SPREADSHEET_RANGE = process.env.SPREADSHEET_RANGE; // Intervalo da planilha
 
 /**
  * Carrega a escala local armazenada no arquivo JSON.
@@ -57,8 +58,8 @@ async function obterDadosPlanilha() {
     try {
         const sheets = getGoogleSheetsClient();
         const resposta = await sheets.spreadsheets.values.get({
-            spreadsheetId: spreadsheet.SPREADSHEET_ID,
-            range: spreadsheet.RANGE
+            spreadsheetId: SPREADSHEET_ID,
+            range: SPREADSHEET_RANGE
         });
         return resposta.data.values || [];
     } catch (erro) {
@@ -77,8 +78,8 @@ async function atualizarDadosPlanilha(valores) {
     try {
         const sheets = getGoogleSheetsClient();
         await sheets.spreadsheets.values.update({
-            spreadsheetId: spreadsheet.SPREADSHEET_ID,
-            range: spreadsheet.RANGE,
+            spreadsheetId: SPREADSHEET_ID,
+            range: SPREADSHEET_RANGE,
             valueInputOption: 'RAW',
             requestBody: { values: valores }
         });
@@ -152,7 +153,7 @@ async function checkoutEscala() {
 
     try {
         await sheets.spreadsheets.values.clear({
-            spreadsheetId: spreadsheet.SPREADSHEET_ID,
+            spreadsheetId: SPREADSHEET_ID,
             range: rangeParaLimpar
         });
         console.log(`✅ Última linha (linha ${ultimaLinha}) limpa.`);

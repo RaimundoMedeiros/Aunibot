@@ -4,7 +4,7 @@ const path = require('path');
 // Configura o client do WhatsApp com autenticação local
 const client = new Client({
     authStrategy: new LocalAuth({
-        clientId: 'Aunibot', // Identificador único para o client
+        clientId: process.env.WHATSAPP_CLIENT_ID, // Identificador único para o client
         dataPath: path.join(__dirname, '../.auth') // Caminho para armazenar dados de autenticação
     }),
     puppeteer: {

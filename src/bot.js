@@ -1,7 +1,11 @@
+require('dotenv').config();
 const client = require('./client');
 const qrcode = require('qrcode-terminal');
 const handleMessage = require('./commands');
 const setupSchedules = require('./scheduler');
+
+const processedMessages = new Set(); // Armazena IDs de mensagens processadas
+const botStartTime = Date.now(); // Marca o horário de início do bot
 
 /**
  * Exibe os grupos disponíveis no console.
@@ -36,13 +40,13 @@ function tratarErroMensagem(erro, mensagem) {
 client.once('ready', async () => {
     console.log(`✅ Aunibot pronto às ${new Date().toLocaleTimeString()}`);
 
-    setupSchedules(client); // Configura os agendamentos automáticos
+    //setupSchedules(client); // Configura os agendamentos automáticos
 
     // Obtém todos os chats e filtra apenas os grupos
     const chats = await client.getChats();
     const grupos = chats.filter(chat => chat.isGroup);
 
-    exibirGrupos(grupos); // Exibe os grupos no console
+    //exibirGrupos(grupos); // Exibe os grupos no console
 });
 
 client.on('qr', exibirQrCode); // Evento para exibir o QR Code no terminal
@@ -50,14 +54,19 @@ client.on('qr', exibirQrCode); // Evento para exibir o QR Code no terminal
 // Evento para processar mensagens recebidas
 client.on('message', async (mensagem) => {
     try {
-        const idRemetente = mensagem.author || mensagem.from; // ID do remetente
-        const nomeRemetente = mensagem.notifyName || (mensagem.sender && mensagem.sender.pushname) || 'Desconhecido'; // Nome do remetente
+        // Ignorar mensagens antigas ou já processadas
+        if (mensagem.timestamp * 1000 < botStartTime || processedMessages.has(mensagem.id._serialized)) {
+            return;
+        }
 
-        console.log(`📩 Mensagem recebida de: ${nomeRemetente} (ID: ${idRemetente})`);
+        // Processar a mensagem
+        console.log(`📩 Processando mensagem: ${mensagem.body}`);
+        await handleMessage(mensagem);
 
-        await handleMessage(mensagem); // Processa a mensagem recebida
+        // Registrar mensagem como processada
+        processedMessages.add(mensagem.id._serialized);
     } catch (erro) {
-        tratarErroMensagem(erro, mensagem);
+        console.error('❌ Erro ao processar mensagem:', erro);
     }
 });
 
@@ -67,4 +76,3 @@ client.on('disconnected', (motivo) => {
 });
 
 client.initialize(); // Inicializa o client do WhatsApp
- 

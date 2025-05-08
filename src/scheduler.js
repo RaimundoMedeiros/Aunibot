@@ -1,7 +1,10 @@
 const schedule = require('node-schedule');
 const { getCurrentDayAndTime } = require('./utils');
 const { carregarEscalaLocal } = require('./scaleService');
-const bolsistasIds = require('../config/bolsistas_ids.json');
+require('dotenv').config(); // Carrega as variáveis do .env
+
+const WHATSAPP_GROUP_ID = process.env.WHATSAPP_GROUP_ID; // ID do grupo do WhatsApp
+const SCHEDULE_CRON = process.env.SCHEDULE_CRON; // Horário do agendamento
 
 /**
  * Obtém a data do próximo sábado a partir da escala.
@@ -20,7 +23,7 @@ function obterProximoSabado(escala) {
  * @returns {string|undefined} - O ID do WhatsApp do bolsista no formato `@c.us`, ou `undefined` se não encontrado.
  */
 function obterIdMenção(nomeBolsista) {
-    return bolsistasIds[nomeBolsista];
+    return process.env[`BOLSISTA_${nomeBolsista.toUpperCase()}`];
 }
 
 /**
@@ -62,9 +65,8 @@ async function notificarBolsista(client) {
 
     // Obtém o ID do bolsista e do grupo
     const idUsuario = obterIdMenção(bolsista);
-    const idGrupo = bolsistasIds.grupoId;
 
-    if (!idUsuario || !idGrupo) {
+    if (!idUsuario || !WHATSAPP_GROUP_ID) {
         console.log(`⚠️ ID não encontrado para o bolsista ${bolsista} ou grupo.`);
         return;
     }
@@ -74,7 +76,7 @@ async function notificarBolsista(client) {
 
     try {
         // Envia a mensagem ao grupo mencionando o bolsista
-        await client.sendMessage(idGrupo, mensagem, {
+        await client.sendMessage(WHATSAPP_GROUP_ID, mensagem, {
             mentions: [idUsuario]
         });
         console.log(`✅ Mensagem enviada ao grupo mencionando ${idUsuario}: ${mensagem}`);
@@ -95,8 +97,8 @@ async function notificarBolsista(client) {
 function setupSchedules(client) {
     console.log('⏰ Configurando agendamentos...');
 
-    // Agendamento para toda quinta-feira às 15h
-    schedule.scheduleJob('0 15 * * 4', () => notificarBolsista(client));
+    // Agendamento com base no cron expression do .env
+    schedule.scheduleJob(SCHEDULE_CRON, () => notificarBolsista(client));
 
     console.log('✅ Agendamentos configurados com sucesso!');
 }

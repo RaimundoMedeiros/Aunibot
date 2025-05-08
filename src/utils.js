@@ -1,5 +1,3 @@
-const admins = require('../config/admin_numbers.json');
-
 /**
  * Retorna uma saudação com base no horário atual.
  * 
@@ -36,7 +34,8 @@ function formatarEscala(escala) {
  * @returns {boolean} - Retorna `true` se o número for de um administrador, caso contrário `false`.
  */
 function isAdmin(numero) {
-    return admins.includes(numero);
+    const adminNumbers = process.env.ADMIN_NUMBERS.split(',');
+    return adminNumbers.includes(numero);
 }
 
 /**

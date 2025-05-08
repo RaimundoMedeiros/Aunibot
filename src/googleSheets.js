@@ -13,7 +13,7 @@ const path = require('path');
  */
 function criarAutenticacaoGoogle() {
     return new google.auth.GoogleAuth({
-        keyFile: path.join(__dirname, '../config/service-account.json'),
+        keyFile: path.resolve(process.env.GOOGLE_KEY_FILE),
         scopes: ['https://www.googleapis.com/auth/spreadsheets']
     });
 }

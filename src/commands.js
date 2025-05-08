@@ -80,7 +80,11 @@ async function comandoCronos(mensagem) {
     const agendamentos = await buscarAgendamentos();
 
     if (agendamentos.length > 0) {
-        const resposta = agendamentos.map(a => `🕒 ${a.horario} - ${a.descricao}`).join('\n');
+        // Formata a resposta com as colunas: interessado, motivo, data e sala
+        const resposta = agendamentos.map(a =>
+            `👤 Interessado: ${a.interessado}\n📄 Motivo: ${a.motivo}\n📅 Data: ${a.data}\n🏢 Sala: ${a.sala}`
+        ).join('\n\n'); // Adiciona uma linha em branco entre os agendamentos
+
         await mensagem.reply(`📅 Agendamentos para o próximo sábado:\n\n${resposta}`);
     } else {
         await mensagem.reply('⚠️ Nenhum agendamento encontrado para o próximo sábado.');
