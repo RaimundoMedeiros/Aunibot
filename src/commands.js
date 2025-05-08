@@ -5,6 +5,7 @@ const {
     checkoutEscala
 } = require('./scaleService');
 const { formatarEscala, isAdmin } = require('./utils');
+const buscarAgendamentos = require('./scheduleScraper');
 
 /**
  * Middleware para comandos restritos a administradores.
@@ -71,6 +72,22 @@ async function comandoCheckout(mensagem) {
 }
 
 /**
+ * Processa o comando `!cronos` para buscar os agendamentos do próximo sábado.
+ * 
+ * @param {Object} mensagem - A mensagem recebida.
+ */
+async function comandoCronos(mensagem) {
+    const agendamentos = await buscarAgendamentos();
+
+    if (agendamentos.length > 0) {
+        const resposta = agendamentos.map(a => `🕒 ${a.horario} - ${a.descricao}`).join('\n');
+        await mensagem.reply(`📅 Agendamentos para o próximo sábado:\n\n${resposta}`);
+    } else {
+        await mensagem.reply('⚠️ Nenhum agendamento encontrado para o próximo sábado.');
+    }
+}
+
+/**
  * Processa as mensagens recebidas e executa os comandos correspondentes.
  * @param {Object} mensagem - A mensagem recebida.
  */
@@ -81,7 +98,8 @@ async function handleMessage(mensagem) {
         '!escala': comandoEscala,
         '!atualizar': restritoAAdmin(comandoAtualizar),
         '!adiar': restritoAAdmin(comandoAdiar),
-        '!checkout': restritoAAdmin(comandoCheckout)
+        '!checkout': restritoAAdmin(comandoCheckout),
+        '!cronos': restritoAAdmin(comandoCronos)
     };
 
     if (comandos[comando]) {
