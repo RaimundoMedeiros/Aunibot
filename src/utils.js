@@ -1,5 +1,10 @@
 const admins = require('../config/admin_numbers.json');
 
+/**
+ * Retorna uma saudação com base no horário atual.
+ * 
+ * @returns {string} - Saudação apropriada (Bom dia, Boa tarde, Boa noite).
+ */
 function obterSaudacao() {
     const hora = new Date().getHours();
     if (hora >= 5 && hora < 12) return 'Prezada(o), Bom dia!\n\n';
@@ -7,6 +12,12 @@ function obterSaudacao() {
     return 'Prezada(o), Boa noite!\n\n';
 }
 
+/**
+ * Formata a escala em uma string legível para exibição.
+ * 
+ * @param {Object} escala - Objeto contendo a escala, onde as chaves são datas e os valores são os nomes dos bolsistas.
+ * @returns {string} - Escala formatada como uma tabela legível.
+ */
 function formatarEscala(escala) {
     const saudacao = obterSaudacao();
     const cabecalho = '🌟 ESCALA DE SÁBADOS\n===========================\n DATA     | BOLSISTA\n----------|----------------\n';
@@ -18,10 +29,24 @@ function formatarEscala(escala) {
     return `${saudacao}${cabecalho}${corpo}\n${rodape}`;
 }
 
+/**
+ * Verifica se o número fornecido pertence a um administrador.
+ * 
+ * @param {string} numero - Número do remetente no formato internacional (ex.: `5511912345678`).
+ * @returns {boolean} - Retorna `true` se o número for de um administrador, caso contrário `false`.
+ */
 function isAdmin(numero) {
     return admins.includes(numero);
 }
 
+/**
+ * Obtém o dia da semana e o horário atual.
+ * 
+ * @returns {Object} - Um objeto contendo o dia da semana (`day`) e o horário atual (`time`).
+ * 
+ * @property {string} day - Dia da semana em português (ex.: "segunda-feira").
+ * @property {string} time - Horário atual no formato `HH:mm`.
+ */
 function getCurrentDayAndTime() {
     const agora = new Date();
     const diasDaSemana = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
