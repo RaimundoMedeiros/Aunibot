@@ -13,6 +13,7 @@
   "type": "commonjs",
   "dependencies": {
     "@google-cloud/storage": "^7.16.0",
+    "dotenv": "^16.5.0",
     "googleapis": "^148.0.0",
     "node-schedule": "^2.1.1",
     "pm2": "^6.0.5",
