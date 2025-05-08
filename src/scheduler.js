@@ -1,42 +1,58 @@
 const schedule = require('node-schedule');
 const { getCurrentDayAndTime } = require('./utils');
-const { loadLocalScale } = require('./scaleService');
+const { carregarEscalaLocal } = require('./scaleService');
 const bolsistasIds = require('../config/bolsistas_ids.json');
 
-/**
- * Configura os agendamentos do bot.
- * @param {Object} client - O cliente do WhatsApp (whatsapp-web.js).
- */
+function obterProximoSabado(escala) {
+    return Object.keys(escala)[0];
+}
+
+function obterIdMenção(nomeBolsista) {
+    return bolsistasIds[nomeBolsista];
+}
+
+function criarMensagemConvocacao(idUsuario, dataEscala) {
+    const mencao = `@${idUsuario.split('@')[0]}`;
+    return `📢 Atenção! ${mencao}, você está convocado para a escala do próximo sábado (${dataEscala}).`;
+}
+
+async function notificarBolsista(client) {
+    const { day, time } = getCurrentDayAndTime();
+    console.log(`⏰ Executando tarefa agendada: ${day} às ${time}`);
+
+    const escala = carregarEscalaLocal();
+    const proximoSabado = obterProximoSabado(escala.escala);
+    const bolsista = escala.escala[proximoSabado];
+
+    if (!bolsista) {
+        console.log('⚠️ Nenhum bolsista encontrado para o próximo sábado.');
+        return;
+    }
+
+    const idUsuario = obterIdMenção(bolsista);
+    const idGrupo = bolsistasIds.grupoId;
+
+    if (!idUsuario || !idGrupo) {
+        console.log(`⚠️ ID não encontrado para o bolsista ${bolsista} ou grupo.`);
+        return;
+    }
+
+    const mensagem = criarMensagemConvocacao(idUsuario, proximoSabado);
+
+    try {
+        await client.sendMessage(idGrupo, mensagem, {
+            mentions: [idUsuario]
+        });
+        console.log(`✅ Mensagem enviada ao grupo mencionando ${idUsuario}: ${mensagem}`);
+    } catch (erro) {
+        console.error('❌ Erro ao enviar mensagem ao grupo:', erro);
+    }
+}
+
 function setupSchedules(client) {
     console.log('⏰ Configurando agendamentos...');
 
-    schedule.scheduleJob('0 15 * * 4', async () => {
-        const { day, time } = getCurrentDayAndTime();
-        console.log(`⏰ Executando tarefa agendada: ${day} às ${time}`);
-
-        const escala = loadLocalScale();
-        const proximoSabado = Object.keys(escala.escala)[0];
-        const bolsista = escala.escala[proximoSabado];
-
-        if (bolsista) {
-            const id = bolsistasIds[bolsista];
-            const grupoId = bolsistasIds.grupoId;
-
-            if (id && grupoId) {
-                const mensagem = `📢 Atenção! @${id.split('@')[0]}, você está convocado para a escala do próximo sábado (${proximoSabado}).`;
-
-                await client.sendMessage(grupoId, mensagem, {
-                    mentions: [id]
-                });
-
-                console.log(`✅ Mensagem enviada para o grupo mencionando ${id}: ${mensagem}`);
-            } else {
-                console.log(`⚠️ ID não encontrado para o bolsista ${bolsista} ou grupo.`);
-            }
-        } else {
-            console.log('⚠️ Nenhum bolsista encontrado para o próximo sábado.');
-        }
-    });
+    schedule.scheduleJob('0 15 * * 4', () => notificarBolsista(client));
 
     console.log('✅ Agendamentos configurados com sucesso!');
 }

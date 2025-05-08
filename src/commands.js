@@ -1,54 +1,68 @@
-const { sincronizarPlanilha, adiarEscalaPlanilha, loadLocalScale, checkoutEscala } = require('./scaleService');
+const {
+    sincronizarPlanilha,
+    adiarEscalaPlanilha,
+    carregarEscalaLocal,
+    checkoutEscala
+} = require('./scaleService');
 const { formatarEscala, isAdmin } = require('./utils');
 
-/**
- * Middleware para comandos restritos a administradores.
- * @param {Function} command - A função do comando a ser executado.
- * @returns {Function} - Uma função que verifica permissões antes de executar o comando.
- */
-function adminOnly(command) {
-    return async (msg) => {
-        const sender = msg.from;
-        if (!isAdmin(sender)) {
-            await msg.reply('❌ Você não tem permissão para isso.');
+function restritoAAdmin(acao) {
+    return async (mensagem) => {
+        if (!isAdmin(mensagem.from)) {
+            await mensagem.reply('❌ Você não tem permissão para isso.');
             return;
         }
-        await command(msg);
+        await acao(mensagem);
     };
 }
 
-async function handleMessage(msg) {
-    const content = msg.body.trim();
+async function comandoEscala(mensagem) {
+    const dados = carregarEscalaLocal();
+    await mensagem.reply(formatarEscala(dados.escala));
+}
 
-    if (content === '!escala') {
-        const dados = loadLocalScale();
-        await msg.reply(formatarEscala(dados.escala));
+async function comandoAtualizar(mensagem) {
+    const atualizado = await sincronizarPlanilha();
+    const resposta = atualizado ? '✅ Escala atualizada!' : '❌ Erro ao atualizar.';
+    await mensagem.reply(resposta);
+}
+
+async function comandoAdiar(mensagem) {
+    const novaEscala = await adiarEscalaPlanilha();
+    const resposta = novaEscala
+        ? `✅ Escala adiada!
+
+${formatarEscala(novaEscala.escala)}`
+        : '❌ Erro ao adiar a escala.';
+    await mensagem.reply(resposta);
+}
+
+async function comandoCheckout(mensagem) {
+    const sucesso = await checkoutEscala();
+    if (!sucesso) {
+        await mensagem.reply('❌ Erro ao atualizar a escala.');
+        return;
     }
 
-    else if (content === '!atualizar') {
-        await adminOnly(async (msg) => {
-            const updated = await sincronizarPlanilha();
-            await msg.reply(updated ? '✅ Escala atualizada!' : '❌ Erro ao atualizar.');
-        })(msg);
-    }
+    const atualizado = await sincronizarPlanilha();
+    const resposta = atualizado
+        ? '✅ Escala atualizada e sincronizada com sucesso!'
+        : '✅ Escala atualizada, mas houve um erro ao sincronizar.';
+    await mensagem.reply(resposta);
+}
 
-    else if (content === '!adiar') {
-        await adminOnly(async (msg) => {
-            const novaEscala = await adiarEscalaPlanilha();
-            await msg.reply(novaEscala ? `✅ Escala adiada!\n\n${formatarEscala(novaEscala.escala)}` : '❌ Erro ao adiar a escala.');
-        })(msg);
-    }
+async function handleMessage(mensagem) {
+    const comando = mensagem.body.trim();
 
-    else if (content === '!checkout') {
-        await adminOnly(async (msg) => {
-            const success = await checkoutEscala(); 
-            if (success) {
-                const updated = await sincronizarPlanilha(); 
-                await msg.reply(updated ? '✅ Escala atualizada e sincronizada com sucesso!' : '✅ Escala atualizada, mas houve um erro ao sincronizar.');
-            } else {
-                await msg.reply('❌ Erro ao atualizar a escala.');
-            }
-        })(msg);
+    const comandos = {
+        '!escala': comandoEscala,
+        '!atualizar': restritoAAdmin(comandoAtualizar),
+        '!adiar': restritoAAdmin(comandoAdiar),
+        '!checkout': restritoAAdmin(comandoCheckout)
+    };
+
+    if (comandos[comando]) {
+        await comandos[comando](mensagem);
     }
 }
 
