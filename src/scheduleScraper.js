@@ -92,9 +92,10 @@ async function extrairDadosTabela(page) {
 /**
  * Busca os agendamentos do próximo sábado em uma página de agendamentos.
  * 
+ * @param {number} tentativas - Número de tentativas restantes.
  * @returns {Promise<Array<Object>>} - Uma lista de agendamentos contendo interessado, motivo, data e sala.
  */
-async function buscarAgendamentos() {
+async function buscarAgendamentos(tentativas = 5) {
     const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
 
@@ -123,7 +124,19 @@ async function buscarAgendamentos() {
 
         // Extrai os dados da tabela
         const agendamentos = await extrairDadosTabela(page);
-        console.log('✅ Dados extraídos com sucesso:', agendamentos);
+
+        if (agendamentos.length === 0) {
+            console.log(`⚠️ Nenhum agendamento encontrado. Tentativas restantes: ${tentativas - 1}`);
+            if (tentativas > 1) {
+                // Fecha o navegador antes de tentar novamente
+                await browser.close();
+                return buscarAgendamentos(tentativas - 1); // Tenta novamente
+            } else {
+                console.log('⚠️ Nenhum agendamento encontrado após 5 tentativas. Prosseguindo...');
+            }
+        } else {
+            console.log('✅ Dados extraídos com sucesso:', agendamentos);
+        }
 
         return agendamentos;
     } catch (erro) {
