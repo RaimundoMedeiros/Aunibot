@@ -93,13 +93,16 @@ async function extrairDadosTabela(page) {
  * Busca os agendamentos do próximo sábado em uma página de agendamentos.
  * 
  * @param {number} tentativas - Número de tentativas restantes.
+ * @param {Object} client - Instância do cliente do WhatsApp para enviar mensagens em caso de falha.
  * @returns {Promise<Array<Object>>} - Uma lista de agendamentos contendo interessado, motivo, data e sala.
  */
-async function buscarAgendamentos(tentativas = 5) {
+async function buscarAgendamentos(tentativas = 5, client) {
     const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
 
     try {
+        console.log(`🔄 Tentativa ${6 - tentativas} de 5...`);
+
         // Realiza o login
         await realizarLogin(page);
 
@@ -130,21 +133,37 @@ async function buscarAgendamentos(tentativas = 5) {
             if (tentativas > 1) {
                 // Fecha o navegador antes de tentar novamente
                 await browser.close();
-                return buscarAgendamentos(tentativas - 1); // Tenta novamente
+                return buscarAgendamentos(tentativas - 1, client); // Tenta novamente
             } else {
-                console.log('⚠️ Nenhum agendamento encontrado após 5 tentativas. Prosseguindo...');
+                console.log('⚠️ Nenhum agendamento encontrado após 5 tentativas.');
+                if (client && process.env.WHATSAPP_GROUP_ID) {
+                    const mensagemErro = '⚠️ Nenhum agendamento encontrado após 5 tentativas.';
+                    await client.sendMessage(process.env.WHATSAPP_GROUP_ID, mensagemErro);
+                }
             }
         } else {
             console.log('✅ Dados extraídos com sucesso:', agendamentos);
+            return agendamentos;
         }
-
-        return agendamentos;
     } catch (erro) {
-        console.error('❌ Erro ao buscar agendamentos:', erro);
-        return [];
+        console.error(`❌ Erro ao buscar agendamentos na tentativa ${6 - tentativas}:`, erro);
+
+        if (tentativas > 1) {
+            // Fecha o navegador antes de tentar novamente
+            await browser.close();
+            return buscarAgendamentos(tentativas - 1, client); // Tenta novamente
+        } else {
+            console.log('❌ Todas as tentativas falharam.');
+            if (client && process.env.WHATSAPP_GROUP_ID) {
+                const mensagemErro = `❌ Ocorreu um erro ao buscar os agendamentos após 5 tentativas: ${erro.message}`;
+                await client.sendMessage(process.env.WHATSAPP_GROUP_ID, mensagemErro);
+            }
+        }
     } finally {
         await browser.close();
     }
+
+    return [];
 }
 
 module.exports = buscarAgendamentos;
