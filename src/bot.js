@@ -40,13 +40,13 @@ function tratarErroMensagem(erro, mensagem) {
 client.once('ready', async () => {
     console.log(`✅ Aunibot pronto às ${new Date().toLocaleTimeString()}`);
 
-    //setupSchedules(client); // Configura os agendamentos automáticos
+    setupSchedules(client); // Configura os agendamentos automáticos
 
     // Obtém todos os chats e filtra apenas os grupos
     const chats = await client.getChats();
     const grupos = chats.filter(chat => chat.isGroup);
 
-    //exibirGrupos(grupos); // Exibe os grupos no console
+    exibirGrupos(grupos); // Exibe os grupos no console
 });
 
 client.on('qr', exibirQrCode); // Evento para exibir o QR Code no terminal
