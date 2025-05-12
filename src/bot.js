@@ -1,7 +1,7 @@
 require('dotenv').config();
 const client = require('./client');
 const qrcode = require('qrcode-terminal');
-const handleMessage = require('./commands');
+const { handleMessage } = require('./commands');
 const setupSchedules = require('./scheduler');
 
 const processedMessages = new Set(); // Armazena IDs de mensagens processadas
@@ -61,7 +61,7 @@ client.on('message', async (mensagem) => {
 
         // Processar a mensagem
         console.log(`📩 Processando mensagem: ${mensagem.body}`);
-        await handleMessage(mensagem);
+        await handleMessage(mensagem, client); // Passa o client como argumento
 
         // Registrar mensagem como processada
         processedMessages.add(mensagem.id._serialized);

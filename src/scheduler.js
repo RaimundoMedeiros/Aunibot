@@ -1,10 +1,11 @@
 const schedule = require('node-schedule');
 const { getCurrentDayAndTime } = require('./utils');
 const { carregarEscalaLocal } = require('./scaleService');
-require('dotenv').config(); // Carrega as variáveis do .env
+const { comandoCronos } = require('./commands');
 
 const WHATSAPP_GROUP_ID = process.env.WHATSAPP_GROUP_ID; // ID do grupo do WhatsApp
-const SCHEDULE_CRON = process.env.SCHEDULE_CRON; // Horário do agendamento
+const SCHEDULE_NOTI = process.env.SCHEDULE_NOTI; // Cronograma para notificação do bolsista
+const SCHEDULE_CRON = process.env.SCHEDULE_CRON; // Cronograma para buscar agendamentos
 
 /**
  * Obtém a data do próximo sábado a partir da escala.
@@ -23,7 +24,7 @@ function obterProximoSabado(escala) {
  * @returns {string|undefined} - O ID do WhatsApp do bolsista no formato `@c.us`, ou `undefined` se não encontrado.
  */
 function obterIdMenção(nomeBolsista) {
-    return process.env[`BOLSISTA_${nomeBolsista.toUpperCase()}`];
+    return process.env[nomeBolsista.toUpperCase()];
 }
 
 /**
@@ -93,12 +94,15 @@ async function notificarBolsista(client) {
  * @description
  * Configura uma tarefa agendada para notificar o bolsista responsável pela escala do próximo sábado.
  * O agendamento é configurado para ser executado toda quinta-feira às 15h.
+ * 
+ * Aciona o comandoCronos para buscar os agendamentos do próximo sábado todas as sextas-feiras às 18h. 
  */
 function setupSchedules(client) {
     console.log('⏰ Configurando agendamentos...');
 
-    // Agendamento com base no cron expression do .env
-    schedule.scheduleJob(SCHEDULE_CRON, () => notificarBolsista(client));
+    schedule.scheduleJob(SCHEDULE_NOTI, () => notificarBolsista(client));
+
+    schedule.scheduleJob(SCHEDULE_CRON, () => comandoCronos({ from: WHATSAPP_GROUP_ID }, client));
 
     console.log('✅ Agendamentos configurados com sucesso!');
 }

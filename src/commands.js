@@ -75,27 +75,31 @@ async function comandoCheckout(mensagem) {
  * Processa o comando `!cronos` para buscar os agendamentos do próximo sábado.
  * 
  * @param {Object} mensagem - A mensagem recebida.
+ * @param {Object} client - O client do WhatsApp.
  */
-async function comandoCronos(mensagem) {
+async function comandoCronos(mensagem, client) {
     const agendamentos = await buscarAgendamentos();
+
+    const destino = mensagem.from;
 
     if (agendamentos.length > 0) {
         // Formata a resposta com as colunas: interessado, motivo, data e sala
         const resposta = agendamentos.map(a =>
-            `👤 Interessado: ${a.interessado}\n📄 Motivo: ${a.motivo}\n📅 Data: ${a.data}\n🏢 Sala: ${a.sala}`
-        ).join('\n\n'); // Adiciona uma linha em branco entre os agendamentos
+            `👤 Interessado: ${a.interessado}\n📄 Motivo: ${a.motivo}\n📅 Data: ${a.data} \n🏢 Sala: ${a.sala}`
+        ).join('\n\n');
 
-        await mensagem.reply(`📅 Agendamentos para o próximo sábado:\n\n${resposta}`);
+        await client.sendMessage(destino, `📅 Agendamentos para o próximo sábado:\n\n${resposta}`);
     } else {
-        await mensagem.reply('⚠️ Nenhum agendamento encontrado para o próximo sábado.');
+        await client.sendMessage(destino, '⚠️ Nenhum agendamento encontrado para o próximo sábado.');
     }
 }
 
 /**
  * Processa as mensagens recebidas e executa os comandos correspondentes.
  * @param {Object} mensagem - A mensagem recebida.
+ * @param {Object} client - O client do WhatsApp.
  */
-async function handleMessage(mensagem) {
+async function handleMessage(mensagem, client) {
     const comando = mensagem.body.trim();
 
     const comandos = {
@@ -103,7 +107,7 @@ async function handleMessage(mensagem) {
         '!atualizar': restritoAAdmin(comandoAtualizar),
         '!adiar': restritoAAdmin(comandoAdiar),
         '!checkout': restritoAAdmin(comandoCheckout),
-        '!cronos': restritoAAdmin(comandoCronos)
+        '!cronos': restritoAAdmin((mensagem) => comandoCronos(mensagem, client))
     };
 
     if (comandos[comando]) {
@@ -111,4 +115,7 @@ async function handleMessage(mensagem) {
     }
 }
 
-module.exports = handleMessage;
+module.exports = {
+    comandoCronos,
+    handleMessage
+}
