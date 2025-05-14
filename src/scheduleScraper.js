@@ -56,7 +56,7 @@ async function aguardarTabela(page) {
         page.waitForFunction(() => {
             const tbody = document.querySelector('#pesquisarAgendamentoForm\\:agendamentoTablePesquisa\\:tb');
             return tbody && tbody.innerText.trim().length > 0;
-        }, { timeout: 10000 }) // Timeout ajustável
+        }, { timeout: 20000 }) // Timeout ajustável
     ]);
 }
 
@@ -158,6 +158,7 @@ async function buscarAgendamentos(tentativas = 5, client) {
                 const mensagemErro = `❌ Ocorreu um erro ao buscar os agendamentos após 5 tentativas: ${erro.message}`;
                 await client.sendMessage(process.env.WHATSAPP_GROUP_ID, mensagemErro);
             }
+            return null; 
         }
     } finally {
         await browser.close();

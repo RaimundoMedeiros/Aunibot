@@ -82,6 +82,11 @@ async function comandoCronos(mensagem, client) {
 
     const destino = mensagem.from;
 
+    if (agendamentos === null) {
+        await client.sendMessage(destino, '❌ Ocorreu um erro ao buscar os agendamentos. Tente novamente mais tarde.');
+        return;
+    }
+
     if (agendamentos.length > 0) {
         // Formata a resposta com as colunas: interessado, motivo, data e sala
         const resposta = agendamentos.map(a =>
